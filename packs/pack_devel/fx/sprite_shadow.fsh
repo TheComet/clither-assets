@@ -2,6 +2,7 @@ precision mediump float;
 
 varying vec2 fTexCoord;
 
+// Only need the sprite's alpha channel for shadows
 uniform sampler2D sNM[4];
 
 void main()
