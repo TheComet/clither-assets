@@ -1,4 +1,7 @@
-precision mediump float;
+// Need highp in this case because uv coordinates are world
+// coordinates
+precision highp float;
+
 #define TILE_SCALE 0.5
 
 // x,y contain factors for how much to "stretch" the x or y dimension
