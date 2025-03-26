@@ -17,7 +17,8 @@ uniform vec3 uCamera;
 // shadow texture is 480x270, then x,y = 1/480,1/270
 uniform vec2 uShadowInvRes;
 
-vec3 uWorldBorder = vec3(20.0*20.0, 40.0*40.0, 64.0*64.0);
+// Squared world border, x = inner radius, y = ring start, z = ring end
+uniform vec3 uWorldBorder;
 
 // Contains the shadow mask (white = shadow, black = no shadow)
 // It spans the entire screen and aspect ratio adjustments have
@@ -36,19 +37,32 @@ void main()
     // The background texture is rendered to a fullscreen quad. We can
     // create the illusion of a moving background by scrolling the texture's UV
     // coordinates depending on camera position
-    vec2 uv = (fTexCoord - 0.5) / uCamera.z * uAspectRatio.xy + uCamera.xy / 2.0;
-    uv = uv * TILE_SCALE;
+    //
+    // To make the math a bit simpler, we use UV coordinates from [-0.5, 0.5]
+    // instead of [0, 1]. This centers the camera at [0, 0] and it's easier to
+    // apply zoom and aspect ratio adjustments.
+
+    // World space [-1, 1] -> UV space [-0.5, 0.5]
+    vec2 cameraPos_uvSpace = uCamera.xy / 2.0;
+    vec3 worldBorder_uvSpace = uWorldBorder / 2.0;
+
+    // Calculate texcoord position in UV space
+    vec2 texCoord_uvSpace = fTexCoord / uCamera.z * uAspectRatio.xy;
+    vec2 pos_uvSpace = texCoord_uvSpace + cameraPos_uvSpace;
     
     // Sample both textures
-    vec3 color = texture2D(sCol, uv).rgb;
-    vec3 nm = texture2D(sNM, uv).rgb;
+    vec3 color = texture2D(sCol, pos_uvSpace * TILE_SCALE).rgb;
+    vec3 nm = texture2D(sNM, pos_uvSpace * TILE_SCALE).rgb;
 
-    float distSq = dot(uv, uv);
-    float mixBorder1 = clamp((distSq - uWorldBorder.x) * 0.05, 0.0, 1.0);
-    float mixBorder2 = clamp((distSq - uWorldBorder.y) * 0.05, 0.0, 1.0);
-    float mixBorder3 = clamp((distSq - uWorldBorder.z) * 0.01, 0.0, 1.0);
+    float innerRadiusSq = worldBorder_uvSpace.x * worldBorder_uvSpace.x;
+    float ringStartSq = worldBorder_uvSpace.y * worldBorder_uvSpace.y;
+    float ringEndSq = worldBorder_uvSpace.z * worldBorder_uvSpace.z;
+    float distSq = dot(pos_uvSpace, pos_uvSpace);
+    float mixBorder1 = clamp((distSq - innerRadiusSq) * 0.05, 0.0, 1.0);
+    float mixBorder2 = clamp((distSq - ringStartSq) * 0.05, 0.0, 1.0);
+    float mixBorder3 = clamp((distSq - ringEndSq) * 0.01, 0.0, 1.0);
     float mixBorder = mixBorder1 - mixBorder2 + mixBorder3;
-    float fade = clamp(1.0 - (dot(uv, uv) - uWorldBorder.z) * 0.005, 0.0, 1.0);
+    float fade = clamp(1.0 - (distSq - ringEndSq) * 0.005, 0.0, 1.0);
     color = vec3(0.2, 0.2, 0.2)*mixBorder + (1.0-mixBorder)*color;
     color *= fade;
 
@@ -63,36 +77,37 @@ void main()
     color = color * (1.0-0.9) + normFac * color * 0.9;
 
     // Apply a 5x5 Gaussian blur filter for smoother shadows
+    vec2 shadowUV = fTexCoord + 0.5;
     float shadowFac = 
-        1.0  * texture2D(sShadow, vec2(fTexCoord.x-2.0*uShadowInvRes.x, fTexCoord.y-2.0*uShadowInvRes.y)).r +
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x-1.0*uShadowInvRes.x, fTexCoord.y-2.0*uShadowInvRes.y)).r +
-        7.0  * texture2D(sShadow, vec2(fTexCoord.x+0.0*uShadowInvRes.x, fTexCoord.y-2.0*uShadowInvRes.y)).r +
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x+1.0*uShadowInvRes.x, fTexCoord.y-2.0*uShadowInvRes.y)).r +
-        1.0  * texture2D(sShadow, vec2(fTexCoord.x+2.0*uShadowInvRes.x, fTexCoord.y-2.0*uShadowInvRes.y)).r +
+        1.0  * texture2D(sShadow, vec2(shadowUV.x-2.0*uShadowInvRes.x, shadowUV.y-2.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x-1.0*uShadowInvRes.x, shadowUV.y-2.0*uShadowInvRes.y)).r +
+        7.0  * texture2D(sShadow, vec2(shadowUV.x+0.0*uShadowInvRes.x, shadowUV.y-2.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x+1.0*uShadowInvRes.x, shadowUV.y-2.0*uShadowInvRes.y)).r +
+        1.0  * texture2D(sShadow, vec2(shadowUV.x+2.0*uShadowInvRes.x, shadowUV.y-2.0*uShadowInvRes.y)).r +
 
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x-2.0*uShadowInvRes.x, fTexCoord.y-1.0*uShadowInvRes.y)).r +
-        16.0 * texture2D(sShadow, vec2(fTexCoord.x-1.0*uShadowInvRes.x, fTexCoord.y-1.0*uShadowInvRes.y)).r +
-        26.0 * texture2D(sShadow, vec2(fTexCoord.x+0.0*uShadowInvRes.x, fTexCoord.y-1.0*uShadowInvRes.y)).r +
-        16.0 * texture2D(sShadow, vec2(fTexCoord.x+1.0*uShadowInvRes.x, fTexCoord.y-1.0*uShadowInvRes.y)).r +
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x+2.0*uShadowInvRes.x, fTexCoord.y-1.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x-2.0*uShadowInvRes.x, shadowUV.y-1.0*uShadowInvRes.y)).r +
+        16.0 * texture2D(sShadow, vec2(shadowUV.x-1.0*uShadowInvRes.x, shadowUV.y-1.0*uShadowInvRes.y)).r +
+        26.0 * texture2D(sShadow, vec2(shadowUV.x+0.0*uShadowInvRes.x, shadowUV.y-1.0*uShadowInvRes.y)).r +
+        16.0 * texture2D(sShadow, vec2(shadowUV.x+1.0*uShadowInvRes.x, shadowUV.y-1.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x+2.0*uShadowInvRes.x, shadowUV.y-1.0*uShadowInvRes.y)).r +
 
-        7.0  * texture2D(sShadow, vec2(fTexCoord.x-2.0*uShadowInvRes.x, fTexCoord.y+0.0*uShadowInvRes.y)).r +
-        26.0 * texture2D(sShadow, vec2(fTexCoord.x-1.0*uShadowInvRes.x, fTexCoord.y+0.0*uShadowInvRes.y)).r +
-        41.0 * texture2D(sShadow, vec2(fTexCoord.x+0.0*uShadowInvRes.x, fTexCoord.y+0.0*uShadowInvRes.y)).r +
-        26.0 * texture2D(sShadow, vec2(fTexCoord.x+1.0*uShadowInvRes.x, fTexCoord.y+0.0*uShadowInvRes.y)).r +
-        7.0  * texture2D(sShadow, vec2(fTexCoord.x+2.0*uShadowInvRes.x, fTexCoord.y+0.0*uShadowInvRes.y)).r +
+        7.0  * texture2D(sShadow, vec2(shadowUV.x-2.0*uShadowInvRes.x, shadowUV.y+0.0*uShadowInvRes.y)).r +
+        26.0 * texture2D(sShadow, vec2(shadowUV.x-1.0*uShadowInvRes.x, shadowUV.y+0.0*uShadowInvRes.y)).r +
+        41.0 * texture2D(sShadow, vec2(shadowUV.x+0.0*uShadowInvRes.x, shadowUV.y+0.0*uShadowInvRes.y)).r +
+        26.0 * texture2D(sShadow, vec2(shadowUV.x+1.0*uShadowInvRes.x, shadowUV.y+0.0*uShadowInvRes.y)).r +
+        7.0  * texture2D(sShadow, vec2(shadowUV.x+2.0*uShadowInvRes.x, shadowUV.y+0.0*uShadowInvRes.y)).r +
 
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x-2.0*uShadowInvRes.x, fTexCoord.y+1.0*uShadowInvRes.y)).r +
-        16.0 * texture2D(sShadow, vec2(fTexCoord.x-1.0*uShadowInvRes.x, fTexCoord.y+1.0*uShadowInvRes.y)).r +
-        26.0 * texture2D(sShadow, vec2(fTexCoord.x+0.0*uShadowInvRes.x, fTexCoord.y+1.0*uShadowInvRes.y)).r +
-        16.0 * texture2D(sShadow, vec2(fTexCoord.x+1.0*uShadowInvRes.x, fTexCoord.y+1.0*uShadowInvRes.y)).r +
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x+2.0*uShadowInvRes.x, fTexCoord.y+1.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x-2.0*uShadowInvRes.x, shadowUV.y+1.0*uShadowInvRes.y)).r +
+        16.0 * texture2D(sShadow, vec2(shadowUV.x-1.0*uShadowInvRes.x, shadowUV.y+1.0*uShadowInvRes.y)).r +
+        26.0 * texture2D(sShadow, vec2(shadowUV.x+0.0*uShadowInvRes.x, shadowUV.y+1.0*uShadowInvRes.y)).r +
+        16.0 * texture2D(sShadow, vec2(shadowUV.x+1.0*uShadowInvRes.x, shadowUV.y+1.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x+2.0*uShadowInvRes.x, shadowUV.y+1.0*uShadowInvRes.y)).r +
 
-        1.0  * texture2D(sShadow, vec2(fTexCoord.x-2.0*uShadowInvRes.x, fTexCoord.y+2.0*uShadowInvRes.y)).r +
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x-1.0*uShadowInvRes.x, fTexCoord.y+2.0*uShadowInvRes.y)).r +
-        7.0  * texture2D(sShadow, vec2(fTexCoord.x+0.0*uShadowInvRes.x, fTexCoord.y+2.0*uShadowInvRes.y)).r +
-        4.0  * texture2D(sShadow, vec2(fTexCoord.x+1.0*uShadowInvRes.x, fTexCoord.y+2.0*uShadowInvRes.y)).r +
-        1.0  * texture2D(sShadow, vec2(fTexCoord.x+2.0*uShadowInvRes.x, fTexCoord.y+2.0*uShadowInvRes.y)).r;
+        1.0  * texture2D(sShadow, vec2(shadowUV.x-2.0*uShadowInvRes.x, shadowUV.y+2.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x-1.0*uShadowInvRes.x, shadowUV.y+2.0*uShadowInvRes.y)).r +
+        7.0  * texture2D(sShadow, vec2(shadowUV.x+0.0*uShadowInvRes.x, shadowUV.y+2.0*uShadowInvRes.y)).r +
+        4.0  * texture2D(sShadow, vec2(shadowUV.x+1.0*uShadowInvRes.x, shadowUV.y+2.0*uShadowInvRes.y)).r +
+        1.0  * texture2D(sShadow, vec2(shadowUV.x+2.0*uShadowInvRes.x, shadowUV.y+2.0*uShadowInvRes.y)).r;
     shadowFac /= 273.0;
 
     // Apply shadow
