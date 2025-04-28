@@ -1,10 +1,7 @@
 precision mediump float;
 
 varying vec2 fTexCoord;
-varying vec3 fLightDir_tangentSpace;
-
 uniform sampler2D sCol;
-uniform sampler2D sNM;
 
 vec3 uTint = vec3(1.0, 0.8, 0.4);
 
