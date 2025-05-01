@@ -1,7 +1,6 @@
 precision mediump float;
 
 attribute vec2 vPosition;
-attribute vec2 vTexCoord;
 
 // x,y contain factors for how much to "stretch" the x or y dimension
 // For example, if the screen is 1920x1080 then x=16/9 and y=1
@@ -26,7 +25,8 @@ varying vec2 fTexCoord;
 void main()
 {
 	// Calculate UV coordinate for current frame of animation
-    fTexCoord = vTexCoord * uAnim.xy + uAnim.zw;
+    fTexCoord = vPosition * 0.5 + 0.5;
+    fTexCoord = fTexCoord * uAnim.xy + uAnim.zw;
 	
 	// Rotate, scale, and position the sprite. If the window is stretched,
 	// we account for this by stretching the sprite in the opposite direction

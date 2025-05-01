@@ -1,7 +1,6 @@
 precision mediump float;
 
 attribute vec2 vPosition;
-attribute vec2 vTexCoord;
 
 // x,y contain factors for how much to "stretch" the x or y dimension
 // For example, if the screen is 1920x1080 then x=16/9 and y=1
@@ -22,12 +21,13 @@ uniform float uSize;
 uniform vec4 uAnim;
 
 varying vec2 fTexCoord;
-varying vec3 fLightDir_tangentSpace;
+varying vec3 fLightDir;
 
 void main()
 {
 	// Calculate UV coordinate for current frame of animation
-    fTexCoord = vTexCoord * uAnim.xy + uAnim.zw;
+    fTexCoord = vPosition * 0.5 + 0.5;
+    fTexCoord = fTexCoord * uAnim.xy + uAnim.zw;
 	
 	// Rotate, scale, and position the sprite. If the window is stretched,
 	// we account for this by stretching the sprite in the opposite direction
@@ -37,8 +37,14 @@ void main()
 
 	// Light is currently slightly above camera's position and 1 unit above the sprites
 	// Transform light from camera space into tangent space
-    vec2 lightDir_cameraSpace = vec2(pos.x, pos.y - 0.5);
-    fLightDir_tangentSpace = vec3(mat2(uDir.x, uDir.y, uDir.y, -uDir.x) * lightDir_cameraSpace, -1.0);
+    vec3 lightPos = vec3(pos.x, pos.y + 0.5, 3.0);
+    vec3 spritePos = vec3(pos, 0.0);
+    vec3 lightDir = normalize(spritePos - lightPos);
+    mat3 rotate = mat3(
+        -uDir.x, uDir.y, 0.0,
+        uDir.y, uDir.x, 0.0,
+        0.0, 0.0, 1.0);
+    fLightDir = rotate * lightDir;
 
     gl_Position = vec4(pos, 0.0, 1.0);
 }

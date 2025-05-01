@@ -13,6 +13,8 @@ void main()
     fTexCoord = vPosition * 0.5;
 	
 	// Light is currently slightly above camera's position and 1 unit above the sprites
-    fLightDir = vec3(vec2(vPosition.x, vPosition.y - 0.5), -1.0);
+    vec3 lightPos = vec3(vPosition.x, vPosition.y + 0.5, 3.0);
+    vec3 vPos = vec3(vPosition, 0.0);
+    fLightDir = normalize(vPos - lightPos);
     gl_Position = vec4(vPosition, 0.0, 1.0);
 }

@@ -1,10 +1,12 @@
 precision mediump float;
 
 varying vec2 fTexCoord;
-varying vec3 fLightDir_tangentSpace;
+varying vec3 fLightDir;
 
 uniform sampler2D sCol;
 uniform sampler2D sNM;
+
+uniform vec2 uDir;
 
 vec3 uTint = vec3(1.0, 0.8, 0.4);
 
@@ -24,10 +26,17 @@ void main()
     normal.xy = nm.xy * 2.0 - 1.0;
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
 
+    mat3 rotate = mat3(
+        -uDir.x, uDir.y, 0.0,
+        uDir.y, uDir.x, 0.0,
+        0.0, 0.0, 1.0);
+    //normal = rotate * normal;
+
 	// Normal influence
-    vec3 lightDir = normalize(fLightDir_tangentSpace);
+    vec3 lightDir = normalize(fLightDir);
     float normFac = clamp(dot(normal, -lightDir), 0.0, 1.0);
     color = color * (1.0 - 0.9) + color * normFac * 0.9;
 
+    //gl_FragColor = vec4(color, nm.a);
     gl_FragColor = vec4(color, nm.a);
 }
