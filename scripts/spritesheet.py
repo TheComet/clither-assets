@@ -4,11 +4,11 @@ import sys
 from os.path import join
 from os import listdir
 
-pack_name = "horror"
-sprite = "head0"
-layer = "gather"
-rows = 4
-cols = 4
+pack_name = "liam-playground"
+sprite = "body0"
+layer = "base"
+rows = 1
+cols = 1
 
 export_path = join("export", pack_name, sprite)
 col_files = list(sorted(x for x in listdir(export_path) if x.startswith(layer + "_col_")))
@@ -16,8 +16,8 @@ msk_files = list(sorted(x for x in listdir(export_path) if x.startswith(layer + 
 nor_files = list(sorted(x for x in listdir(export_path) if x.startswith(layer + "_nor_")))
 alpha_files = list(sorted(x for x in listdir(export_path) if x.startswith(layer + "_alpha_")))
 
-col_imgs = [np.asarray(Image.open(join(export_path, f))) for f in col_files]
-msk_imgs = [np.asarray(Image.open(join(export_path, f))) for f in msk_files]
+col_imgs = [np.asarray(Image.open(join(export_path, f)).transpose(Image.ROTATE_270)) for f in col_files]
+msk_imgs = [np.asarray(Image.open(join(export_path, f)).transpose(Image.ROTATE_270)) for f in msk_files]
 h, w = col_imgs[0].shape[:2]
 sheet = np.zeros((h*rows, w*cols, 4), dtype=np.uint8)
 
@@ -32,8 +32,8 @@ for col, msk in zip(col_imgs, msk_imgs):
 
 Image.fromarray(sheet).save(join("packs", pack_name, sprite, layer + "_col.png"))
 
-nor_imgs = [np.asarray(Image.open(join(export_path, f))) for f in nor_files]
-alpha_imgs = [np.asarray(Image.open(join(export_path, f))) for f in alpha_files]
+nor_imgs = [np.asarray(Image.open(join(export_path, f)).transpose(Image.ROTATE_270)) for f in nor_files]
+alpha_imgs = [np.asarray(Image.open(join(export_path, f)).transpose(Image.ROTATE_270)) for f in alpha_files]
 h, w = nor_imgs[0].shape[:2]
 sheet = np.zeros((h*rows, w*cols, 4), dtype=np.uint8)
 
