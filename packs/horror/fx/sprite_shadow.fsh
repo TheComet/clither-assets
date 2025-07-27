@@ -3,10 +3,10 @@ precision mediump float;
 varying vec2 fTexCoord;
 
 // Only need the sprite's alpha channel for shadows
-uniform sampler2D sNM[4];
+uniform sampler2D sTex1;
 
 void main()
 {
-    float mask = texture2D(sNM[0], fTexCoord).a;
+    float mask = texture2D(sTex1, fTexCoord).a;
     gl_FragColor = vec4(vec3(1.0, 1.0, 1.0), mask);
 }

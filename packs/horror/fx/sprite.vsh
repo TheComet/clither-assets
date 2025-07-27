@@ -7,16 +7,12 @@ attribute vec2 vPosition;
 // z,w contain padding offsets. For example, if the screen is 1920x1080
 // then z=16/9/2 and w=0
 uniform vec2 uAspectRatio;
-
 // Sprite position in camera space. Z component contains the camera's scale (1/zoom factor)
 uniform vec3 uPosCameraSpace;
-
 // Sprite direction vector in camera space
 uniform vec2 uDir;
-
 // Sprite size in camera space
 uniform float uSize;
-
 // UV coordinates to extract the current frame of animation from the sprite sheet
 uniform vec4 uAnim;
 

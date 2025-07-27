@@ -3,8 +3,8 @@ precision mediump float;
 varying vec2 fTexCoord;
 varying vec3 fLightDir;
 
-uniform sampler2D sCol;
-uniform sampler2D sNM;
+uniform sampler2D sTex0;
+uniform sampler2D sTex1;
 
 uniform vec2 uDir;
 
@@ -13,8 +13,8 @@ vec3 uTint = vec3(1.0, 0.8, 0.4);
 void main()
 {
 	// Sample textures
-    vec4 col = texture2D(sCol, fTexCoord);
-    vec4 nm = texture2D(sNM, fTexCoord);
+    vec4 col = texture2D(sTex0, fTexCoord);
+    vec4 nm = texture2D(sTex1, fTexCoord);
     float tintMask = col.a * 0.4;
     vec3 color = col.rgb;
 

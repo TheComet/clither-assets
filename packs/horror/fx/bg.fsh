@@ -26,8 +26,8 @@ uniform vec3 uWorldBorder;
 uniform sampler2D sShadow;
 
 // Color and normal map
-uniform sampler2D sCol;
-uniform sampler2D sNM;
+uniform sampler2D sTex0;
+uniform sampler2D sTex1;
 
 varying vec2 fTexCoord;
 varying vec3 fLightDir;
@@ -51,8 +51,8 @@ void main()
     vec2 pos_uvSpace = texCoord_uvSpace + cameraPos_uvSpace;
     
     // Sample both textures
-    vec3 color = texture2D(sCol, pos_uvSpace * TILE_SCALE).rgb;
-    vec3 nm = texture2D(sNM, pos_uvSpace * TILE_SCALE).rgb;
+    vec3 color = texture2D(sTex0, pos_uvSpace * TILE_SCALE).rgb;
+    vec3 nm = texture2D(sTex1, pos_uvSpace * TILE_SCALE).rgb;
 
     float innerRadiusSq = worldBorder_uvSpace.x * worldBorder_uvSpace.x;
     float ringStartSq = worldBorder_uvSpace.y * worldBorder_uvSpace.y;
