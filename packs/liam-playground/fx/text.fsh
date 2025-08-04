@@ -1,10 +1,12 @@
 precision mediump float;
 
 uniform sampler2D sAtlas;
+uniform vec4 uColor;
+
 varying vec2 fTexCoord;
 
 void main()
 {
-    float color = texture2D(sAtlas, fTexCoord).a;
-    gl_FragColor = vec4(1.0, 1.0, 1.0, color * 0.6);
+    float alpha = texture2D(sAtlas, fTexCoord).a;
+    gl_FragColor = vec4(uColor.rgb, uColor.a * alpha);
 }

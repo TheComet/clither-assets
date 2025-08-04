@@ -15,7 +15,6 @@ uniform vec2 uHeadPosition;
 uniform vec3 uAspectRatio;
 // x=U scale, y=U offset
 uniform vec2 uScrollScaleOffset;
-uniform float uTCutoff;
 
 varying vec2 fTexCoord;
 
@@ -31,9 +30,12 @@ vec2 sample_bezier_derivative(float t)
 
 float calculate_u_coord(float t)
 {
-    vec2 last = vec2(0, 0);
-    float u_coord = 0;
-    for (int i = 1; i <= t * QUADS; ++i) {
+    vec2 last = vec2(0.0, 0.0);
+    float u_coord = 0.0;
+    for (int i = 1; i <= QUADS; ++i) {
+        if (float(i) > t * float(QUADS)) {
+            break;
+        }
         float t0 = float(i) / float(QUADS);
         vec2 sample = sample_bezier(t0);
         u_coord += length(sample - last);
