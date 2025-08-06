@@ -1,4 +1,3 @@
-#version 330
 // Need highp in this case because uv coordinates are world
 // coordinates
 precision highp float;

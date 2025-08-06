@@ -1,4 +1,3 @@
-#version 330
 precision mediump float;
 
 attribute vec2 vPosition;
