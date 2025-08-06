@@ -1,3 +1,4 @@
+#version 330
 precision mediump float;
 
 varying vec2 fTexCoord;

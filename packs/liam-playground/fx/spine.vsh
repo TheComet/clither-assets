@@ -1,3 +1,4 @@
+#version 330
 precision mediump float;
 
 // NOTE: Must be the same value as in spine.c
